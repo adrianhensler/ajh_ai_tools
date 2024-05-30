@@ -61,9 +61,9 @@ OPENAI_API_KEY=your-openai-api-key
 
 On Unix-based systems, you can set environment variables like this:
 ```sh
-export AITOOLS_IMAP_SERVER=imap.ionos.com
+export AITOOLS_IMAP_SERVER=
 export AITOOLS_IMAP_PORT=993
-export AITOOLS_SMTP_SERVER=smtp.ionos.com
+export AITOOLS_SMTP_SERVER=
 export AITOOLS_SMTP_PORT=587
 export AITOOLS_EMAIL_ACCOUNT=your-email@example.com
 export AITOOLS_EMAIL_PASSWORD=yourpassword
