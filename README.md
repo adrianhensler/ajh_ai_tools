@@ -38,9 +38,9 @@ Before using this script, ensure you have the following:
 
 Set the following environment variables for the script to function correctly:
 
-- `AITOOLS_IMAP_SERVER`: Your IMAP server (e.g., imap.ionos.com)
+- `AITOOLS_IMAP_SERVER`: Your IMAP server (e.g., imap.example.com)
 - `AITOOLS_IMAP_PORT`: Your IMAP server port (e.g., 993)
-- `AITOOLS_SMTP_SERVER`: Your SMTP server (e.g., smtp.ionos.com)
+- `AITOOLS_SMTP_SERVER`: Your SMTP server (e.g., smtp.example.com)
 - `AITOOLS_SMTP_PORT`: Your SMTP server port (e.g., 587)
 - `AITOOLS_EMAIL_ACCOUNT`: Your email account
 - `AITOOLS_EMAIL_PASSWORD`: Your email account password
