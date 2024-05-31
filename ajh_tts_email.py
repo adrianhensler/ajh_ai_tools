@@ -10,22 +10,35 @@ import openai
 import os
 import logging
 import time
+import argparse
+from dotenv import load_dotenv
+import warnings
+
+# Ignore DeprecationWarning to get rid of "DeprecationWarning: Due to a bug, this method doesn't actually stream the response content, .with_streaming_response.method() should be used instead"
+# Seems like this should be different but I could not determine the issue.
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Email credentials and server details from environment variables
-IMAP_SERVER = os.getenv('AITOOLS_IMAP_SERVER', 'imap.ionos.com')
-IMAP_PORT = int(os.getenv('AITOOLS_IMAP_PORT', 993))
-SMTP_SERVER = os.getenv('AITOOLS_SMTP_SERVER', 'smtp.ionos.com')
-SMTP_PORT = int(os.getenv('AITOOLS_SMTP_PORT', 587))
+IMAP_SERVER = os.getenv('AITOOLS_IMAP_SERVER')
+IMAP_PORT = int(os.getenv('AITOOLS_IMAP_PORT'))
+SMTP_SERVER = os.getenv('AITOOLS_SMTP_SERVER')
+SMTP_PORT = int(os.getenv('AITOOLS_SMTP_PORT'))
 EMAIL_ACCOUNT = os.getenv('AITOOLS_EMAIL_ACCOUNT')
 EMAIL_PASSWORD = os.getenv('AITOOLS_EMAIL_PASSWORD')
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+FORCE_MODERATION = os.getenv('FORCE_MODERATION', 'true').lower() == 'true'
+DISABLE_MODERATION = os.getenv('DISABLE_MODERATION', 'false').lower() == 'true'
 
 # Validate environment variables
 if not EMAIL_ACCOUNT or not EMAIL_PASSWORD or not OPENAI_API_KEY:
-    logging.error("Missing essential environment variables. Please check your environment settings.")
+    logging.error("Missing essential environment variables. Please check your .env file.")
     exit(1)
 
 # Log the loaded environment variables (except sensitive information)
@@ -60,8 +73,10 @@ def check_email():
             subject = msg['Subject']
             email_body = extract_email_body(msg)
 
+            moderate_content = not DISABLE_MODERATION and (FORCE_MODERATION or 'NO_MODERATION' not in subject.upper())
+
             if email_body:
-                if is_content_safe(email_body):
+                if not moderate_content or is_content_safe(email_body):
                     voice_model = extract_voice_model(subject)
                     transcribed_audio_path = transcribe_text_to_audio(email_body, voice_model)
                     if transcribed_audio_path:
@@ -158,11 +173,18 @@ def send_email(to_email, subject, audio_file_path):
         logging.error(f"Error sending email: {e}")
 
 if __name__ == "__main__":
-    try:
-        while True:
-            check_email()
-            time.sleep(60)  # Check for new emails every minute
-    except KeyboardInterrupt:
-        logging.info("Service interrupted by user.")
-    except Exception as e:
-        logging.error(f"Unexpected error: {e}")
+    parser = argparse.ArgumentParser(description="Process emails and transcribe to audio.")
+    parser.add_argument('--loop', action='store_true', help="Run the script in a loop.")
+    args = parser.parse_args()
+
+    if args.loop:
+        try:
+            while True:
+                check_email()
+                time.sleep(60)  # Check for new emails every minute
+        except KeyboardInterrupt:
+            logging.info("Service interrupted by user.")
+        except Exception as e:
+            logging.error(f"Unexpected error: {e}")
+    else:
+        check_email()
