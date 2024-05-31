@@ -10,26 +10,27 @@ This Python script automates the process of converting email text to audio files
 ## Prerequisites
 
 Before using this script, ensure you have the following:
-- Python 3.7 or higher
+- tested on Python 3.12 
 - An OpenAI API key
+- An email address you can monitor
 
 ## Installation
 
 1. **Clone the Repository:**
    ```sh
-   git clone https://github.com/yourusername/your-repo.git
-   cd your-repo
+   git clone https://github.com/adrianhensler/ajh_ai_tools.git
+   cd ajh_ai_tools
    ```
 
 2. **Install Dependencies:**
    - Create a virtual environment (optional but recommended):
      ```sh
-     python -m venv env
+     python3 -m venv env
      source env/bin/activate  # On Windows use `env\Scripts ctivate`
      ```
    - Install required packages:
      ```sh
-     pip install -r requirements.txt
+     pip install -r openai
      ```
 
 ## Configuration
@@ -74,7 +75,7 @@ export OPENAI_API_KEY=your-openai-api-key
 
 Run the Script:
 ```sh
-python tts_email.py
+python3 ajh_tts_email.py
 ```
 
 ### Email Subject Format
