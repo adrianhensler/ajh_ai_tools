@@ -23,18 +23,22 @@ EMAIL_ACCOUNT = os.getenv('AITOOLS_EMAIL_ACCOUNT')
 EMAIL_PASSWORD = os.getenv('AITOOLS_EMAIL_PASSWORD')
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
+# Validate environment variables
+if not EMAIL_ACCOUNT or not EMAIL_PASSWORD or not OPENAI_API_KEY:
+    logging.error("Missing essential environment variables. Please check your environment settings.")
+    exit(1)
+
 # Log the loaded environment variables (except sensitive information)
 logging.info(f"IMAP_SERVER: {IMAP_SERVER}")
 logging.info(f"IMAP_PORT: {IMAP_PORT}")
 logging.info(f"SMTP_SERVER: {SMTP_SERVER}")
 logging.info(f"SMTP_PORT: {SMTP_PORT}")
 
-# Ensure sensitive environment variables are set
-if not EMAIL_ACCOUNT or not EMAIL_PASSWORD or not OPENAI_API_KEY:
-    logging.error("Missing essential environment variables. Please check your environment settings.")
-    exit(1)
+# Initialize OpenAI API key
+openai.api_key = OPENAI_API_KEY
 
 def check_email():
+    """Check the email inbox for new messages with the subject 'TTS'."""
     try:
         mail = imaplib.IMAP4_SSL(IMAP_SERVER, IMAP_PORT)
         mail.login(EMAIL_ACCOUNT, EMAIL_PASSWORD)
@@ -42,7 +46,7 @@ def check_email():
 
         result, data = mail.search(None, '(UNSEEN SUBJECT "TTS")')
         email_ids = data[0].split()
-        
+
         if not email_ids:
             logging.info("No new emails found.")
             return
@@ -55,27 +59,28 @@ def check_email():
             from_email = msg['From']
             subject = msg['Subject']
             email_body = extract_email_body(msg)
-            
+
             if email_body:
-                # Check if the content is safe using OpenAI's moderation endpoint
                 if is_content_safe(email_body):
                     voice_model = extract_voice_model(subject)
                     transcribed_audio_path = transcribe_text_to_audio(email_body, voice_model)
                     if transcribed_audio_path:
                         send_email(from_email, subject, transcribed_audio_path)
-                        # Mark email as read after successful processing
                         mail.store(email_id, '+FLAGS', '\\Seen')
                     else:
                         logging.error(f"Failed to transcribe and send email for {from_email}")
                 else:
                     logging.warning(f"Email from {from_email} contained inappropriate content and was not processed.")
-
     except Exception as e:
         logging.error(f"Error checking email: {e}")
     finally:
-        mail.logout()
+        try:
+            mail.logout()
+        except Exception as e:
+            logging.error(f"Error logging out from email server: {e}")
 
 def extract_email_body(msg):
+    """Extract the body of the email."""
     try:
         if msg.is_multipart():
             for part in msg.walk():
@@ -88,6 +93,7 @@ def extract_email_body(msg):
     return None
 
 def extract_voice_model(subject):
+    """Extract the voice model from the email subject."""
     models = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer']
     for model in models:
         if model in subject.lower():
@@ -95,10 +101,12 @@ def extract_voice_model(subject):
     return 'onyx'  # Default voice model
 
 def is_content_safe(text):
+    """Check if the email content is safe using OpenAI's moderation endpoint."""
     try:
-        response = openai.Moderation.create(input=text)
-        results = response["results"][0]
-        if results["flagged"]:
+        client = openai.OpenAI(api_key=OPENAI_API_KEY)
+        response = client.moderations.create(input=text)
+        results = response.results[0]  # Use dot notation to access results
+        if results.flagged:  # Use dot notation to access flagged attribute
             return False
         return True
     except Exception as e:
@@ -106,27 +114,23 @@ def is_content_safe(text):
         return False
 
 def transcribe_text_to_audio(text, voice_model='onyx'):
+    """Transcribe text to audio using OpenAI's TTS model."""
     try:
-        openai.api_key = OPENAI_API_KEY
+        client = openai.OpenAI(api_key=OPENAI_API_KEY)
         speech_file_path = Path(__file__).parent / "speech.mp3"
-
-        response = openai.Audio.create(
-            model="whisper-1",
-            input=text,
-            voice=voice_model
+        response = client.audio.speech.create(
+            model="tts-1",
+            voice=voice_model,
+            input=text
         )
-        
-        audio_data = response['data']
-        
-        with open(speech_file_path, 'wb') as audio_file:
-            audio_file.write(audio_data)
-
+        response.stream_to_file(speech_file_path)
         return speech_file_path
     except Exception as e:
         logging.error(f"Error transcribing text to audio: {e}")
         return None
 
 def send_email(to_email, subject, audio_file_path):
+    """Send an email with the transcribed audio file as an attachment."""
     try:
         msg = MIMEMultipart()
         msg['From'] = EMAIL_ACCOUNT
@@ -150,7 +154,6 @@ def send_email(to_email, subject, audio_file_path):
             server.login(EMAIL_ACCOUNT, EMAIL_PASSWORD)
             server.sendmail(EMAIL_ACCOUNT, to_email, msg.as_string())
             logging.info(f"Email sent to {to_email}")
-
     except Exception as e:
         logging.error(f"Error sending email: {e}")
 
@@ -163,4 +166,3 @@ if __name__ == "__main__":
         logging.info("Service interrupted by user.")
     except Exception as e:
         logging.error(f"Unexpected error: {e}")
-        
