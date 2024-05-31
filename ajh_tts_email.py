@@ -163,3 +163,4 @@ if __name__ == "__main__":
         logging.info("Service interrupted by user.")
     except Exception as e:
         logging.error(f"Unexpected error: {e}")
+        
