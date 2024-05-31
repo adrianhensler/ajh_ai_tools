@@ -95,6 +95,13 @@ Log messages are configured to be printed to the console. You can redirect them 
 
 ## Troubleshooting
 
+Please note that the core functionality has been tested fairly well. That is running with and without --loop, changing voices with the "TTS: fable" format in the email subject line,
+sending the text to the moderation endpoint, then sending the audio back to the sender.
+
+Moderation variables and logic has not been fully tested. These options should be considered untested examples to be used and tested at your own risk.
+
+I've added another document that may assist if you wish to run this as a cron job.
+
 ### Common Issues
 - **Missing Environment Variables:** Ensure all required environment variables are set.
 - **Connection Errors:** Verify your email server details and internet connection.
@@ -105,10 +112,6 @@ Check the log output for detailed error messages and follow the recommendations.
 
 ## Future Development Ideas
 - **Enhanced Error Handling:** Improve robustness with more granular error handling.
-- **Multiple Email Accounts:** Support multiple email accounts.
-- **Web Interface:** Develop a web-based interface for easier management.
-- **Scheduled Transcriptions:** Add the ability to schedule transcription jobs.
-- **Content Moderation:** Use OpenAI's moderation endpoint to filter and classify email content before processing.
 
 ## License
 This project is licensed under the MIT License - see the LICENSE file for details.
