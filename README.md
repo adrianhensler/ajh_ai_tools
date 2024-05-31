@@ -10,8 +10,9 @@ This Python script automates the process of converting email text to audio files
 ## Prerequisites
 
 Before using this script, ensure you have the following:
-- Python 3.7 or higher
+- Python, tested on 3.12
 - An OpenAI API key
+- An email to monitor.
 
 ## Installation
 
