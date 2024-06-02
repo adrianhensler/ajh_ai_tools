@@ -26,9 +26,6 @@ GitHub Repository: https://github.com/adrianhensler/ajh_ai_tools
 
 Author: Adrian Hensler
 """
-import imaplib
-import smtplib
-import email
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email.mime.text import MIMEText
@@ -43,8 +40,6 @@ from dotenv import load_dotenv
 import warnings
 
 # Ignore DeprecationWarning to get rid of "DeprecationWarning: Due to a bug, this method doesn't actually stream the response content, .with_streaming_response.method() should be used instead"
-# Seems like this should be different but I could not determine the issue.
-
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 # Load environment variables from .env file
@@ -62,7 +57,10 @@ EMAIL_ACCOUNT = os.getenv('AITOOLS_EMAIL_ACCOUNT')
 EMAIL_PASSWORD = os.getenv('AITOOLS_EMAIL_PASSWORD')
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 FORCE_MODERATION = os.getenv('FORCE_MODERATION', 'true').lower() == 'true'
-DISABLE_MODERATION = os.getenv('DISABLE_MODERATION', 'false').lower() == 'true'
+DISABLE_MODERATION = os.getenv('DISABLE_MODERATION', 'false').lower() == 'false'
+
+# Define maximum character count for email body
+MAX_CHARACTER_COUNT = 2000  # Set your desired limit
 
 # Validate environment variables
 if not EMAIL_ACCOUNT or not EMAIL_PASSWORD or not OPENAI_API_KEY:
@@ -101,9 +99,14 @@ def check_email():
             subject = msg['Subject']
             email_body = extract_email_body(msg)
 
-            moderate_content = not DISABLE_MODERATION and (FORCE_MODERATION or 'NO_MODERATION' not in subject.upper())
-
             if email_body:
+                char_count = len(email_body)
+                if char_count > MAX_CHARACTER_COUNT:
+                    logging.warning(f"Email from {from_email} exceeds the character count limit and was not processed.")
+                    continue
+
+                moderate_content = not DISABLE_MODERATION and (FORCE_MODERATION or 'NO_MODERATION' not in subject.upper())
+
                 if not moderate_content or is_content_safe(email_body):
                     voice_model = extract_voice_model(subject)
                     transcribed_audio_path = transcribe_text_to_audio(email_body, voice_model)
@@ -180,9 +183,24 @@ def send_email(to_email, subject, audio_file_path):
         msg['To'] = to_email
         msg['Subject'] = subject
 
-        # Adding the body text to the email
-        body = "Thanks for using ai_tools@adrianhensler.com. Please find the transcribed audio file attached."
-        msg.attach(MIMEText(body, 'plain'))
+        # Adding the body text to the email with HTML content
+        body = """
+        <html>
+        <body>
+            <p>Dear {to_email},</p>
+            <p>Thank you for using <strong>ajh_ai_tools</strong>. Please find the transcribed audio file attached.</p>
+            <p>Best regards,<br>Adrian Hensler</p>
+            <hr>
+            <p>Connect with me:</p>
+            <ul>
+                <li><a href="https://www.linkedin.com/in/adrian-hensler/">Please visit my LinkedIn</a></li>
+                <li><a href="https://www.flickr.com/photos/adrianhensler/">Please enjoy my photography on Flickr</a></li>
+            </ul>
+        </body>
+        </html>
+        """.format(to_email=to_email)
+
+        msg.attach(MIMEText(body, 'html'))
 
         # Adding the audio attachment
         with open(audio_file_path, 'rb') as audio_file:
@@ -199,6 +217,7 @@ def send_email(to_email, subject, audio_file_path):
             logging.info(f"Email sent to {to_email}")
     except Exception as e:
         logging.error(f"Error sending email: {e}")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process emails and transcribe to audio.")
