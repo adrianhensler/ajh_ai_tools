@@ -1,3 +1,31 @@
+"""
+AI Tools Email Processor
+Version: 0.3
+
+This script processes emails with the subject 'TTS', checks for content safety using OpenAI's moderation endpoint,
+transcribes the email content to audio using OpenAI's TTS model, and sends an email with the transcribed audio file attached.
+
+Features:
+- Checks for new emails with subject 'TTS'.
+- Provides word character limit per email.
+- Moderates email content to ensure safety.
+- Transcribes email content to audio.
+- Sends an email with the transcribed audio file attached.
+- Provides links to LinkedIn, Flickr, and Etsy pages in the email.
+
+Requirements:
+- imaplib
+- smtplib
+- email
+- openai
+- logging
+- argparse
+- python-dotenv
+
+GitHub Repository: https://github.com/adrianhensler/ajh_ai_tools
+
+Author: Adrian Hensler
+"""
 import imaplib
 import smtplib
 import email
