@@ -79,6 +79,8 @@ To run the script in a loop (checking for new emails every minute), use the `--l
 ```bash
 python3 ajh_tts_email.py --loop
 ```
+### Character limit
+A character limit is set at 2000 characters via "MAX_CHARACTER_COUNT = 2000  # Set your desired limit" in the code. Adjust as required.
 
 ### Setting up as a Cron Job
 To run the script as a cron job every 5 minutes, add the following line to your crontab file (`crontab -e`):
